@@ -1,0 +1,11 @@
+Naileditby_gel — Booking Status Refresh Fix
+
+This update fixes the customer status page showing:
+“Booking status is temporarily unavailable. Please try again later.”
+after refreshing the private booking-status link.
+
+The status page now has a safe fallback to the site's existing Supabase browser configuration, so it can still load when config.js is not loaded correctly by the browser/cache/deployment.
+
+Your existing Supabase booking-status migration does NOT need to be run again.
+
+Upload all files in this ZIP to Netlify, replacing the previous version.

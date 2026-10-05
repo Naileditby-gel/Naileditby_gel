@@ -1,0 +1,30 @@
+NAILEDITBY_GEL — AUTOMATIC CLIENT REVIEW SYSTEM
+
+WHAT THIS VERSION DOES
+1. Client submits a review.
+2. It is saved as PENDING in Supabase.
+3. Gel logs into /admin.html privately.
+4. Gel taps “Approve & Publish”.
+5. The review immediately appears on the public website — no new Netlify upload is needed.
+6. Gel can also reject a review or remove an approved review from the website.
+
+IMPORTANT
+This requires a free Supabase project because the existing Netlify site is static. Supabase stores the reviews and provides the private login/dashboard.
+
+SETUP
+1. Create a Supabase project.
+2. Open SQL Editor and run supabase-schema.sql from this folder.
+3. In Supabase Authentication, create ONE email/password account for Gel.
+4. After creating Gel's account, disable public email sign-ups in Authentication settings. This keeps the dashboard private.
+5. In Supabase Project Settings → API, copy the Project URL and the anon/public key.
+6. Open config.js and replace:
+   PASTE_YOUR_SUPABASE_PROJECT_URL_HERE
+   PASTE_YOUR_SUPABASE_ANON_KEY_HERE
+7. Upload the whole site folder to Netlify (index.html, config.js, admin.html).
+8. Open your site + /admin.html to log in.
+
+SECURITY
+- The anon/public key is designed to be used in a browser.
+- NEVER put a Supabase service_role/secret key in config.js or any website file.
+- Public visitors can submit reviews but can only read reviews marked approved.
+- Only authenticated dashboard users can approve/reject reviews. Keep public sign-ups disabled.

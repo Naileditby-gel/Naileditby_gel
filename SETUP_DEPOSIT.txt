@@ -1,0 +1,24 @@
+NAILEDITBY_GEL — ₱100 GCASH DEPOSIT SETUP
+
+1. Your existing booking database is already set up.
+2. Open Supabase SQL Editor.
+3. Run supabase-deposit-migration.sql once.
+4. Upload this folder/ZIP to Netlify.
+
+CLIENT FLOW
+- Client chooses a date/time and service.
+- Client sees: ₱100 GCash deposit, +63 961 888 8216, Angel Joy.
+- Client enters the GCash reference number and submits the booking.
+- Booking is stored as pending; deposit is pending verification.
+
+OWNER FLOW
+- Open /admin.html and log in.
+- Open Online Bookings → Pending.
+- Verify the GCash payment against the reference number.
+- Tap Verify Deposit.
+- Then tap Confirm Booking.
+- Confirmed slots remain unavailable to other clients.
+
+IMPORTANT
+The website does not connect directly to GCash or automatically verify payments. Gel verifies the payment in the GCash app, then marks the deposit paid in the dashboard.
+Never place a GCash PIN, OTP, password, or secret key in the website.
