@@ -374,10 +374,35 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     confirmed=data||[]; renderSlots();
   }
   function statusLabel(st){return ({pending:'🟡 Deposit Pending / Pending Review',confirmed:'🟢 Confirmed',rejected:'🔴 Rejected',cancelled:'⚫ Cancelled',completed:'🟣 Completed'}[st]||st);}
+  function calendarPad(n){return String(n).padStart(2,'0');}
+  function calendarStamp(date,time){return date.replace(/-/g,'')+'T'+time.replace(':','')+'00';}
+  function calendarEscape(v){return String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
+  function calendarData(r){
+    const date=r.appointment_date, time=String(r.appointment_time||'').slice(0,5);
+    const start=calendarStamp(date,time);
+    const parts=time.split(':'); const endDate=new Date(Number(date.slice(0,4)),Number(date.slice(5,7))-1,Number(date.slice(8,10)),Number(parts[0]),Number(parts[1])+60);
+    const end=dateFromLocal(endDate);
+    const title='💅 Naileditby_gel — '+String(r.service||'Nail Appointment');
+    const details='Confirmed nail appointment for '+String(r.name||'client')+'.\nService: '+String(r.service||'Nail appointment')+'\nNail length: '+String(r.nail_length||'As booked')+'\nPlease arrive on time. Appointment is by appointment only.';
+    const location='Don Primitivo, Holy Spirit, Quezon City — near Ginto Store';
+    const uid=(r.access_token||crypto.randomUUID())+'@naileditbygel';
+    const ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Naileditby_gel//Booking//EN\r\nCALSCALE:GREGORIAN\r\nBEGIN:VEVENT\r\nUID:'+uid+'\r\nDTSTAMP:'+calendarStamp(date,time)+'Z\r\nDTSTART;TZID=Asia/Manila:'+start+'\r\nDTEND;TZID=Asia/Manila:'+calendarStamp(end.date,end.time)+'\r\nSUMMARY:'+calendarEscape(title)+'\r\nLOCATION:'+calendarEscape(location)+'\r\nDESCRIPTION:'+calendarEscape(details)+'\r\nEND:VEVENT\r\nEND:VCALENDAR';
+    const google='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+start+'/'+calendarStamp(end.date,end.time)+'&details='+encodeURIComponent(details)+'&location='+encodeURIComponent(location)+'&ctz=Asia%2FManila';
+    return {ics,google};
+  }
+  function dateFromLocal(d){return {date:d.getFullYear()+'-'+calendarPad(d.getMonth()+1)+'-'+calendarPad(d.getDate()),time:calendarPad(d.getHours())+':'+calendarPad(d.getMinutes())};}
+  function downloadCalendar(r){
+    const cal=calendarData(r); const blob=new Blob([cal.ics],{type:'text/calendar;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='Naileditby_gel-'+r.appointment_date+'-'+String(r.appointment_time||'').slice(0,5).replace(':','')+'.ics'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+  function addCalendarHtml(r){
+    if(r.status!=='confirmed') return '';
+    const cal=calendarData(r);
+    return '<div style="margin-top:16px;padding:16px;border-radius:18px;background:#fff;border:1px solid var(--line)"><div style="font-weight:800;color:var(--deep);font-size:16px">📅 Save your appointment</div><div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.5">Add your confirmed appointment to your phone calendar so you can get your own calendar reminders. 💗</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"><button type="button" data-add-calendar="ics" style="border:0;border-radius:999px;padding:10px 14px;background:#8c3b5b;color:#fff;font-weight:800;cursor:pointer">📥 Add to Phone Calendar</button><a href="'+cal.google+'" target="_blank" rel="noopener" style="display:inline-block;border:1px solid #e7cbd5;border-radius:999px;padding:9px 14px;color:#8c3b5b;font-weight:800;text-decoration:none;background:#fff7fa">🗓️ Google Calendar</a></div></div>';
+  }
   function bookingStatusHtml(r){
     const date=r.appointment_date, time=String(r.appointment_time||'').slice(0,5);
     const msgText=r.customer_message || ({pending:'Your booking is waiting for Gel to review your deposit.',confirmed:'Your appointment is confirmed! 💅✨',rejected:'Your booking request was rejected. Please read the message below.',cancelled:'Your appointment was cancelled. Please read the message below.'}[r.status]||'');
-    return '<div style="padding:14px;border-radius:16px;background:#fff7fa;border:1px solid var(--line)"><div style="font-weight:800;color:var(--deep);font-size:17px">'+statusLabel(r.status)+'</div><div style="margin-top:7px"><strong>'+esc(r.name)+'</strong> • '+esc(date)+' • '+esc(time)+'</div><div style="margin-top:4px">'+esc(r.service)+'</div><div style="margin-top:12px;line-height:1.7">'+esc(msgText)+'</div>'+(r.status_reason?'<div style="margin-top:10px"><strong>Reason:</strong> '+esc(r.status_reason)+'</div>':'')+'<div style="margin-top:10px;font-size:12px;color:var(--muted)">Last updated: '+new Date(r.updated_at||r.created_at).toLocaleString()+'</div></div>';
+    return '<div style="padding:14px;border-radius:16px;background:#fff7fa;border:1px solid var(--line)"><div style="font-weight:800;color:var(--deep);font-size:17px">'+statusLabel(r.status)+'</div><div style="margin-top:7px"><strong>'+esc(r.name)+'</strong> • '+esc(date)+' • '+esc(time)+'</div><div style="margin-top:4px">'+esc(r.service)+'</div><div style="margin-top:12px;line-height:1.7">'+esc(msgText)+'</div>'+(r.status_reason?'<div style="margin-top:10px"><strong>Reason:</strong> '+esc(r.status_reason)+'</div>':'')+addCalendarHtml(r)+'<div style="margin-top:10px;font-size:12px;color:var(--muted)">Last updated: '+new Date(r.updated_at||r.created_at).toLocaleString()+'</div></div>';
   }
   async function showBookingStatus(token){
     const card=document.getElementById('bookingStatusCard'), out=document.getElementById('bookingStatusContent'); if(!card||!token)return;
@@ -388,6 +413,8 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     const {data,error}=await sb.rpc('get_booking_status',{p_token:token});
     if(error||!data||!data.length){out.innerHTML='<span style="color:#b33">We could not find that booking status link. Please make sure you are using the private link from your booking confirmation.</span>';return;}
     out.innerHTML=bookingStatusHtml(data[0]);
+    const calBtn=out.querySelector('[data-add-calendar=\"ics\"]');
+    if(calBtn){calBtn.addEventListener('click',function(){downloadCalendar(data[0]);});}
   }
   const hashMatch=location.hash.match(/^#booking-status=([^&]+)/); if(hashMatch){try{showBookingStatus(decodeURIComponent(hashMatch[1]));}catch(e){showBookingStatus(hashMatch[1]);}}
   window.addEventListener('hashchange',function(){const m=location.hash.match(/^#booking-status=([^&]+)/);if(m)showBookingStatus(decodeURIComponent(m[1]));});
