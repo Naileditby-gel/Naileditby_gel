@@ -400,9 +400,12 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     btn.disabled=true; btn.textContent='Sending request… ♡';
     const sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
     const ref=document.getElementById('bref').value.trim(); if(!ref){msg.innerHTML='<span style="color:#b33">Please enter your GCash reference number. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;} if(!document.getElementById('policyAgree').checked){msg.innerHTML='<span style="color:#b33">Please read and agree to the booking policies before submitting. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;} const accessToken=crypto.randomUUID(); const payload={access_token:accessToken,name,phone,appointment_date:date,appointment_time:time+':00',service:document.getElementById('bservice').value,nail_length:document.getElementById('blength').value,notes:document.getElementById('bnote').value.trim(),status:'pending',deposit_amount:100,payment_method:'GCash',payment_reference:ref,deposit_status:'pending',customer_message:'Hi! 💗 Your booking request has been received and is waiting for Gel to review your ₱100 GCash deposit. You can use this private status link to check for updates. 💅✨'};
-    const {data:created,error}=await sb.from('bookings').insert(payload).select('id,access_token').single();
-    if(error){msg.innerHTML='<span style="color:#b33">Sorry, your booking request could not be sent. Please try again. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;}
-    const token=(created&&created.access_token)||accessToken; const statusUrl=location.origin+location.pathname+'#booking-status='+encodeURIComponent(token);
+    const {error}=await sb.from('bookings').insert(payload);
+    if(error){console.error('Booking insert error:',error);msg.innerHTML='<span style="color:#b33">Sorry, your booking request could not be sent. Please try again. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;}
+    // The public RLS policy allows INSERT for pending bookings but does not allow
+    // anon users to SELECT the newly-created pending row. We already generated
+    // the private access token client-side, so do not chain .select() after insert.
+    const token=accessToken; const statusUrl=location.origin+location.pathname+'#booking-status='+encodeURIComponent(token);
     msg.innerHTML='<span style="color:#6f2944;font-weight:700">♡ Booking request sent!</span><br><span style="color:#8a6874">Your ₱100 GCash deposit is pending verification. Gel will review it and update your booking. 💗</span><br><a href="'+statusUrl+'" style="display:inline-block;margin-top:10px;color:#8c3b5b;font-weight:700">💌 View your private booking status</a><br><span style="font-size:12px;color:#8a6874">Save this link so you can check updates later.</span>';
     history.replaceState(null,'', '#booking-status='+encodeURIComponent(token));
     showBookingStatus(token);
