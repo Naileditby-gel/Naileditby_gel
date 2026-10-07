@@ -337,7 +337,9 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     <details><summary>When is my appointment officially confirmed?</summary><p>Submitting a request does not automatically confirm the appointment. Your slot is confirmed after Gel replies and approves the date and time.</p></details>
   </div>
   <div class="social-row">
-    <a class="social" href="https://www.instagram.com/naileditby_gel/" target="_blank" rel="noopener">♡ Follow @naileditby_gel</a>
+    <a class="social" href="https://www.instagram.com/naileditby_gel/" target="_blank" rel="noopener">♡ Instagram @naileditby_gel</a>
+    <a class="social" href="https://www.tiktok.com/@ngljy_ndrs" target="_blank" rel="noopener">♪ TikTok @ngljy_ndrs</a>
+    <a class="social" href="https://facebook.com/angel.joy.enderes.2025" target="_blank" rel="noopener">f Facebook</a>
     <a class="social" href="tel:09553697737">☎ 0955 369 7737</a>
   </div>
 </div>
@@ -369,9 +371,9 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     avail.textContent='Checking availability…'; timeEl.disabled=true;
     if(!window.NAILEDIT_CONFIG){avail.textContent='Online calendar is being connected. Please try again soon.';return;}
     const cfg=window.NAILEDIT_CONFIG; const sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
-    const {data,error}=await sb.from('bookings').select('appointment_date,appointment_time').eq('appointment_date',dateEl.value).eq('status','confirmed');
+    const {data,error}=await sb.rpc('get_public_booking_availability',{p_date:dateEl.value});
     if(error){avail.textContent='Could not check availability right now. Please try again.';timeEl.disabled=false;return;}
-    confirmed=data||[]; renderSlots();
+    confirmed=(data||[]).map(x=>({appointment_date:dateEl.value,appointment_time:x.appointment_time})); renderSlots();
   }
   function statusLabel(st){return ({pending:'🟡 Deposit Pending / Pending Review',confirmed:'🟢 Confirmed',rejected:'🔴 Rejected',cancelled:'⚫ Cancelled',completed:'🟣 Completed'}[st]||st);}
   function calendarPad(n){return String(n).padStart(2,'0');}

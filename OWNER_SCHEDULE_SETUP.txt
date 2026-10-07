@@ -1,0 +1,28 @@
+Naileditby_gel — Owner Schedule & Availability
+
+WHAT THIS UPGRADE ADDS
+- Owner Schedule section in admin.html.
+- Upcoming confirmed appointments with “Add to My Phone Calendar” and Google Calendar buttons.
+- Block a whole day or a time range (vacation, travel, personal appointments, etc.).
+- Public booking availability automatically excludes confirmed appointments and owner-blocked times.
+- Removing a block makes that time available again.
+
+IMPORTANT: RUN THE SQL FIRST
+1. Open Supabase SQL Editor.
+2. Run the full contents of: supabase-owner-availability-migration.sql
+3. Wait for Success.
+4. Only then upload the updated website files to GitHub Pages.
+
+HOW TO USE
+- Log into admin.html.
+- In “My Schedule & Availability”, choose a date.
+- Leave start/end blank to block the whole day.
+- Enter both start and end to block a time range.
+- Add a reason if useful (Vacation, Travel, Personal appointment, etc.).
+- For each confirmed booking, use “Add to My Phone Calendar” or “Google Calendar” once. Your phone's calendar app can then provide reminders even when you are not checking the website.
+
+SAFETY
+- Keep the current working ZIP as your backup.
+- This upgrade does not expose your private block reasons to customers.
+- Customer-facing availability only receives unavailable time slots.
+- Google Calendar integration here is a one-click calendar event, not automatic OAuth access to your private Google Calendar.
