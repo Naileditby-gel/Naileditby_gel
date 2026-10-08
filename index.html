@@ -214,6 +214,7 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
           <select id="blength"><option>Short</option><option>Medium</option><option>Long</option><option>Any length</option></select>
         </div>
         <div class="full"><label for="bnote">Design / Inspo Notes</label><textarea id="bnote" placeholder="Tell Gel about your preferred design or paste a description of your inspo."></textarea></div>
+        <div class="full"><label for="binspo">📸 Add Inspo Photos <span style="color:var(--muted);font-weight:500">(optional, up to 3 photos)</span></label><input id="binspo" type="file" accept="image/jpeg,image/png,image/webp" multiple style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff"><div style="font-size:12px;color:var(--muted);margin-top:6px">If it's easier to show Gel than explain it, send your nail inspo photos here. 💗 Max 5MB each.</div><div id="inspoPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div></div>
       </div>
       <div class="booking-online" style="margin-top:16px">
         <strong style="color:var(--wine)">💗 Booking Deposit: ₱100</strong>
@@ -420,6 +421,13 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
   }
   const hashMatch=location.hash.match(/^#booking-status=([^&]+)/); if(hashMatch){try{showBookingStatus(decodeURIComponent(hashMatch[1]));}catch(e){showBookingStatus(hashMatch[1]);}}
   window.addEventListener('hashchange',function(){const m=location.hash.match(/^#booking-status=([^&]+)/);if(m)showBookingStatus(decodeURIComponent(m[1]));});
+  const inspoInput=document.getElementById('binspo'), inspoPreview=document.getElementById('inspoPreview');
+  inspoInput.addEventListener('change',function(){
+    const files=Array.from(inspoInput.files||[]);
+    if(files.length>3){alert('Please choose up to 3 inspo photos. 💗');inspoInput.value='';inspoPreview.innerHTML='';return;}
+    if(files.some(f=>f.size>5*1024*1024)){alert('Each inspo photo must be 5MB or smaller. 💗');inspoInput.value='';inspoPreview.innerHTML='';return;}
+    inspoPreview.innerHTML=''; files.forEach(f=>{const img=document.createElement('img');img.src=URL.createObjectURL(f);img.style.cssText='width:82px;height:82px;object-fit:cover;border-radius:12px;border:1px solid var(--line)';img.onload=()=>URL.revokeObjectURL(img.src);inspoPreview.appendChild(img);});
+  });
   dateEl.addEventListener('change',loadAvailability);
   form.addEventListener('submit',async function(e){
     e.preventDefault(); msg.textContent='';
@@ -428,7 +436,11 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     if(!name||!phone||!date||!time){msg.innerHTML='<span style="color:#b33">Please complete your name, mobile number, date, and available time. 💗</span>';return;}
     btn.disabled=true; btn.textContent='Sending request… ♡';
     const sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
-    const ref=document.getElementById('bref').value.trim(); if(!ref){msg.innerHTML='<span style="color:#b33">Please enter your GCash reference number. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;} if(!document.getElementById('policyAgree').checked){msg.innerHTML='<span style="color:#b33">Please read and agree to the booking policies before submitting. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;} const accessToken=crypto.randomUUID(); const payload={access_token:accessToken,name,phone,appointment_date:date,appointment_time:time+':00',service:document.getElementById('bservice').value,nail_length:document.getElementById('blength').value,notes:document.getElementById('bnote').value.trim(),status:'pending',deposit_amount:100,payment_method:'GCash',payment_reference:ref,deposit_status:'pending',customer_message:'Hi! 💗 Your booking request has been received and is waiting for Gel to review your ₱100 GCash deposit. You can use this private status link to check for updates. 💅✨'};
+    const ref=document.getElementById('bref').value.trim(); if(!ref){msg.innerHTML='<span style="color:#b33">Please enter your GCash reference number. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;} if(!document.getElementById('policyAgree').checked){msg.innerHTML='<span style="color:#b33">Please read and agree to the booking policies before submitting. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;}
+    const accessToken=crypto.randomUUID(); const bookingId=crypto.randomUUID(); const selectedInspo=Array.from(inspoInput.files||[]);
+    let inspoFiles=[];
+    for(let i=0;i<selectedInspo.length;i++){const f=selectedInspo[i]; const ext=(f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg'); const path=bookingId+'/'+crypto.randomUUID()+'.'+ext; const up=await sb.storage.from('booking-inspo').upload(path,f,{contentType:f.type,upsert:false}); if(up.error){console.error('Inspo upload error:',up.error);msg.innerHTML='<span style="color:#b33">One of the inspo photos could not be uploaded. Please try again. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;} inspoFiles.push({path,name:f.name,type:f.type});}
+    const payload={id:bookingId,access_token:accessToken,name,phone,appointment_date:date,appointment_time:time+':00',service:document.getElementById('bservice').value,nail_length:document.getElementById('blength').value,notes:document.getElementById('bnote').value.trim(),inspo_files:inspoFiles,status:'pending',deposit_amount:100,payment_method:'GCash',payment_reference:ref,deposit_status:'pending',customer_message:'Hi! 💗 Your booking request has been received and is waiting for Gel to review your ₱100 GCash deposit. You can use this private status link to check for updates. 💅✨'};
     const {error}=await sb.from('bookings').insert(payload);
     if(error){console.error('Booking insert error:',error);msg.innerHTML='<span style="color:#b33">Sorry, your booking request could not be sent. Please try again. 💗</span>';btn.disabled=false;btn.textContent='♡ Request Appointment Online';return;}
     // The public RLS policy allows INSERT for pending bookings but does not allow
@@ -438,7 +450,7 @@ body{background:linear-gradient(180deg,#fffafb 0%,#fff7f9 100%);color:var(--ink)
     msg.innerHTML='<span style="color:#6f2944;font-weight:700">♡ Booking request sent!</span><br><span style="color:#8a6874">Your ₱100 GCash deposit is pending verification. Gel will review it and update your booking. 💗</span><br><a href="'+statusUrl+'" style="display:inline-block;margin-top:10px;color:#8c3b5b;font-weight:700">💌 View your private booking status</a><br><span style="font-size:12px;color:#8a6874">Save this link so you can check updates later.</span>';
     history.replaceState(null,'', '#booking-status='+encodeURIComponent(token));
     showBookingStatus(token);
-    form.reset(); dateEl.min=localToday; timeEl.innerHTML='<option value="">Choose a date first</option>'; timeEl.disabled=true; avail.textContent='Choose a date to see available appointment times.';
+    form.reset(); inspoPreview.innerHTML=''; dateEl.min=localToday; timeEl.innerHTML='<option value="">Choose a date first</option>'; timeEl.disabled=true; avail.textContent='Choose a date to see available appointment times.';
     btn.disabled=false; btn.textContent='♡ Request Appointment Online';
   });
   document.querySelectorAll('[data-channel]').forEach(function(btn){btn.addEventListener('click',function(){

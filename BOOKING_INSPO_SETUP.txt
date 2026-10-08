@@ -1,0 +1,9 @@
+Naileditby_gel — Booking Completion + Inspo Photos
+
+1. In Supabase SQL Editor, run supabase-completion-inspo-migration.sql once.
+2. Wait for Success. This fixes the Completed booking tab and creates the private booking-inspo storage bucket.
+3. Upload all files in this ZIP to the root of your GitHub Pages repository, replacing the existing files.
+4. Test the owner dashboard: open a confirmed booking and click “Mark Completed”. It should move to Completed.
+5. Test a new customer booking: choose up to 3 inspo photos (JPG/PNG/WebP, max 5MB each). The photos will be visible only to the authenticated owner in the dashboard.
+
+The customer does not need to create an account. The photos are stored in a private Supabase Storage bucket.
